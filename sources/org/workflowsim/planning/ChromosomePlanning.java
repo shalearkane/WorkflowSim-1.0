@@ -1,12 +1,12 @@
 /**
  * Copyright 2012-2013 University Of Southern California
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,6 +15,11 @@
  */
 package org.workflowsim.planning;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.Log;
 import org.workflowsim.CondorVM;
@@ -22,26 +27,49 @@ import org.workflowsim.FileItem;
 import org.workflowsim.Task;
 import org.workflowsim.utils.Parameters;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.*;
-
 /**
  * The HEFT planning algorithm.
  *
  * @author Pedro Paulo Vezzá Campos
  * @date Oct 12, 2013
  */
-public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
+public class ChromosomePlanning extends BasePlanningAlgorithm {
 
-    private final Map<Task, Map<CondorVM, Double>> computationCosts;
-    private final Map<Task, Map<Task, Double>> transferCosts;
-    private final Map<Task, Double> rank;
-    private final Map<CondorVM, List<Event>> schedules;
-    private final Map<Task, Double> earliestFinishTimes;
+    private Map<Task, Map<CondorVM, Double>> computationCosts;
+    private Map<Task, Map<Task, Double>> transferCosts;
+    private Map<Task, Double> rank;
+    private Map<CondorVM, List<Event>> schedules;
+    private Map<Task, Double> earliestFinishTimes;
     private double averageBandwidth;
 
-    public HEFTPlanningAlgorithm() {
+    private class Event {
+
+        public double start;
+        public double finish;
+
+        public Event(double start, double finish) {
+            this.start = start;
+            this.finish = finish;
+        }
+    }
+
+    private class TaskRank implements Comparable<TaskRank> {
+
+        public Task task;
+        public Double rank;
+
+        public TaskRank(Task task, Double rank) {
+            this.task = task;
+            this.rank = rank;
+        }
+
+        @Override
+        public int compareTo(TaskRank o) {
+            return o.rank.compareTo(rank);
+        }
+    }
+
+    public ChromosomePlanning() {
         computationCosts = new HashMap<>();
         transferCosts = new HashMap<>();
         rank = new HashMap<>();
@@ -68,50 +96,6 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
         calculateComputationCosts();
         calculateTransferCosts();
         calculateRanks();
-
-        try {
-            FileWriter myWriter = new FileWriter("input.java", false);
-            myWriter.write("package org.maps.InputData;\n" +
-                    "\n" +
-                    "import java.util.HashSet;\n" +
-                    "import java.util.Set;\n" +
-                    "import java.util.Vector;\n" +
-                    "\n" +
-                    "public class Inputs {\n" +
-                    "    public static final int[][] processing_cost = {\n" +
-                    "    {0},\n");
-
-            for (Task t : getTaskList()) {
-                long tl = t.getCloudletTotalLength();
-                long tl2 = (long) (1.2*tl);
-                long tl3 = (long) (0.8*tl);
-                myWriter.write("    {0," + tl +", " + tl2 + ", " + tl3 + "}, // " + t.getCloudletId() + "\n");
-
-            }
-            myWriter.write("};\n");
-            myWriter.write("public static final Comm_cost_pair[][] dag = new Comm_cost_pair[][]{\n" +
-                    "            {new Comm_cost_pair(0, 0)}, // 0 \n");
-
-            for (Task t : getTaskList()) {
-                Map<Task, Double> tc = transferCosts.get(t);
-                myWriter.write("{");
-                for (Map.Entry<Task, Double> entry : tc.entrySet()) {
-                    if (entry.getValue() != 0) {
-                        int comm_cost = (int) Math.ceil(100.0*entry.getValue());
-                        myWriter.write("new Comm_cost_pair("+entry.getKey().getCloudletId() + "," + comm_cost + "),");
-                        System.out.println(entry.getKey().getCloudletId() + " + " + entry.getValue());
-                    }
-                }
-                myWriter.write("}, //"+t.getCloudletId() + "\n");
-            }
-            myWriter.write("};");
-
-            myWriter.close();
-            System.out.println("Successfully wrote to the file.");
-        } catch (IOException e) {
-            System.out.println("An error occurred.");
-            e.printStackTrace();
-        }
 
         // Selection phase
         allocateTasks();
@@ -390,32 +374,5 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
             sched.add(pos, new Event(start, finish));
         }
         return finish;
-    }
-
-    private class Event {
-
-        public double start;
-        public double finish;
-
-        public Event(double start, double finish) {
-            this.start = start;
-            this.finish = finish;
-        }
-    }
-
-    private class TaskRank implements Comparable<TaskRank> {
-
-        public Task task;
-        public Double rank;
-
-        public TaskRank(Task task, Double rank) {
-            this.task = task;
-            this.rank = rank;
-        }
-
-        @Override
-        public int compareTo(TaskRank o) {
-            return o.rank.compareTo(rank);
-        }
     }
 }
