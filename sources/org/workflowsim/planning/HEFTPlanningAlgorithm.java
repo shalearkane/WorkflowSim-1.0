@@ -105,6 +105,41 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
                 myWriter.write("}, //"+t.getCloudletId() + "\n");
             }
             myWriter.write("};");
+            myWriter.write("public static Vector<Set<Integer>> dependency = new Vector<>(Constants.MAX_TASKS + 1);\n" +
+                    "\n" +
+                    "    public static void main(String[] args) {\n" +
+                    "        System.out.println(\"Processing costs\");\n" +
+                    "        for (int[] pc_cost : processing_cost) {\n" +
+                    "            System.out.println();\n" +
+                    "            for (int cost_on_processor : pc_cost) {\n" +
+                    "                System.out.print(cost_on_processor + \", \");\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "\n" +
+                    "        System.out.println(\"Comm cost pair\");\n" +
+                    "        for (Comm_cost_pair[] pairs : dag) {\n" +
+                    "            System.out.println();\n" +
+                    "            for (Comm_cost_pair p : pairs) {\n" +
+                    "                System.out.print(p.to_node + \" : \" + p.to_node + \", \");\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "\n" +
+                    "    public static void generate_dependency_table() {\n" +
+                    "        //\n" +
+                    "        for (int i = 0; i <= Constants.MAX_TASKS; i++) {\n" +
+                    "            dependency.add(i, new HashSet<>());\n" +
+                    "        }\n" +
+                    "        for (int i = 1; i <= Constants.MAX_TASKS; i++) {\n" +
+                    "            Comm_cost_pair[] ccp = dag[i];\n" +
+                    "            for (Comm_cost_pair p : ccp) {\n" +
+                    "                Set<Integer> s = dependency.get(p.to_node);\n" +
+                    "                s.add(i);\n" +
+                    "                dependency.set(p.to_node, s);\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "}\n");
 
             myWriter.close();
             System.out.println("Successfully wrote to the file.");
