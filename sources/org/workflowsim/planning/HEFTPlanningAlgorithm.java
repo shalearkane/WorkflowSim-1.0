@@ -79,32 +79,35 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
                     "\n" +
                     "public class Inputs {\n" +
                     "    public static final int[][] processing_cost = {\n" +
-                    "    {0},\n");
+                    "    {0, 0, 0, 0, 0, 0, 0, 0},\n");
 
             for (Task t : getTaskList()) {
                 long tl = t.getCloudletTotalLength();
-                long tl2 = (long) (1.2*tl);
-                long tl3 = (long) (0.8*tl);
-                myWriter.write("    {0," + tl +", " + tl2 + ", " + tl3 + "}, // " + t.getCloudletId() + "\n");
+                long tl2 = (long) (1.2 * tl);
+                long tl3 = (long) (0.8 * tl);
+                long tl4 = (long) (1.1 * tl);
+                long tl5 = (long) (0.9 * tl);
+                long tl6 = (long) (0.5 * tl);
+                myWriter.write("    {0," + tl + ", " + tl2 + ", " + tl3 + ", " + tl4 + ", " + tl5 + ", " + tl6 + "}, // " + t.getCloudletId() + "\n");
 
             }
             myWriter.write("};\n");
-            myWriter.write("public static final Comm_cost_pair[][] dag = new Comm_cost_pair[][]{\n" +
-                    "            {new Comm_cost_pair(0, 0)}, // 0 \n");
+            myWriter.write("public static final CCP[][] dag = new CCP[][]{\n" +
+                    "            {new CCP(0, 0)}, // 0 \n");
 
             for (Task t : getTaskList()) {
                 Map<Task, Double> tc = transferCosts.get(t);
                 myWriter.write("{");
                 for (Map.Entry<Task, Double> entry : tc.entrySet()) {
                     if (entry.getValue() != 0) {
-                        int comm_cost = (int) Math.ceil(100.0*entry.getValue());
-                        myWriter.write("new Comm_cost_pair("+entry.getKey().getCloudletId() + "," + comm_cost + "),");
+                        int comm_cost = (int) Math.ceil(10000.0 * entry.getValue());
+                        myWriter.write("new CCP(" + entry.getKey().getCloudletId() + "," + comm_cost + "),");
                         System.out.println(entry.getKey().getCloudletId() + " + " + entry.getValue());
                     }
                 }
-                myWriter.write("}, //"+t.getCloudletId() + "\n");
+                myWriter.write("}, //" + t.getCloudletId() + "\n");
             }
-            myWriter.write("};");
+            myWriter.write("};\n");
             myWriter.write("public static Vector<Set<Integer>> dependency = new Vector<>(Constants.MAX_TASKS + 1);\n" +
                     "\n" +
                     "    public static void main(String[] args) {\n" +
@@ -117,9 +120,9 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
                     "        }\n" +
                     "\n" +
                     "        System.out.println(\"Comm cost pair\");\n" +
-                    "        for (Comm_cost_pair[] pairs : dag) {\n" +
+                    "        for (CCP[] pairs : dag) {\n" +
                     "            System.out.println();\n" +
-                    "            for (Comm_cost_pair p : pairs) {\n" +
+                    "            for (CCP p : pairs) {\n" +
                     "                System.out.print(p.to_node + \" : \" + p.to_node + \", \");\n" +
                     "            }\n" +
                     "        }\n" +
@@ -131,8 +134,8 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
                     "            dependency.add(i, new HashSet<>());\n" +
                     "        }\n" +
                     "        for (int i = 1; i <= Constants.MAX_TASKS; i++) {\n" +
-                    "            Comm_cost_pair[] ccp = dag[i];\n" +
-                    "            for (Comm_cost_pair p : ccp) {\n" +
+                    "            CCP[] ccp = dag[i];\n" +
+                    "            for (CCP p : ccp) {\n" +
                     "                Set<Integer> s = dependency.get(p.to_node);\n" +
                     "                s.add(i);\n" +
                     "                dependency.set(p.to_node, s);\n" +
@@ -346,10 +349,10 @@ public class HEFTPlanningAlgorithm extends BasePlanningAlgorithm {
      * given task in the vm with the constraint of not scheduling it before
      * readyTime. If occupySlot is true, reserves the time slot in the schedule.
      *
-     * @param task The task to have the time slot reserved
-     * @param vm The vm that will execute the task
-     * @param readyTime The first moment that the task is available to be
-     * scheduled
+     * @param task       The task to have the time slot reserved
+     * @param vm         The vm that will execute the task
+     * @param readyTime  The first moment that the task is available to be
+     *                   scheduled
      * @param occupySlot If true, reserves the time slot in the schedule.
      * @return The minimal finish time of the task in the vmn
      */
